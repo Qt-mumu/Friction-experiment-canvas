@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>探究摩擦力实验</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" type="text/css" href="lib-master/theme-chalk/index.css"/>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<script src="js/jquery-3.5.1.min.js"></script>
+	<!-- <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script> -->
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/vue-v2.5.16.js"></script>
+	<script src="lib-master/index.js" type="text/javascript" charset="utf-8"></script>
+	<!-- 引入样式 -->
+<!-- 	<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> -->
+	<!-- 引入组件库 -->
+<!-- 	<script src="https://unpkg.com/element-ui/lib/index.js"></script> -->
+	<link rel="stylesheet" href="css/xiaoche_style.css">
+	
+</head>
+<body>
+	<div class="container-fluid couter_container" id="container">
+		<section class="left_section" id="left">
+			<div id="app">
+				<p  style="padding: 30px 0px 0px 10px; ">设置参数：</p>
+				<el-form 
+						ref='basicMessageForm'
+						:rules='basicMessage.rules'
+						:model='basicMessage.form' 
+						label-position='left'
+						label-width='120px'
+						style="width: 100%; margin-left: 20px"
+						id="basicMessageForm">
+					    <el-form-item label="木块质量：" prop='m'>
+					      	<el-input type='number' v-model='basicMessage.form.m' style="margin-bottom: 0px" :disabled="isAble"></el-input>
+					      	&nbsp<span>N</span>
+					    </el-form-item>
+					     
+					    <el-form-item label="倾斜角：" prop='L' >
+					      	<el-input type='number' v-model="basicMessage.form.L" style="margin-bottom: 0px" :disabled="isAble"></el-input>
+					      	&nbsp<span>°</span>	
+					    </el-form-item>
+					</el-form>
+				<!-- <div  class="ul row">
+				  	<span  class="li col-sm-5">小车质量：</span>
+  					<input class="liSpan col-sm-3" v-model="m" placeholder="小车质量" type="number" :disabled="isAble">	
+  					&nbsp<span>N</span>
+				</div>
+
+				<div  class="ul row">
+				  	<span class="li col-sm-5">倾斜角：</span>
+  					<input class="liSpan col-sm-3" v-model="L" placeholder="斜面的坡度" type="number" :disabled="isAble">
+  					&nbsp<span>°</span>	
+				</div> -->
+
+
+				<div class="ul row">
+					<span class="li col-sm-5" >接触面：</span>
+					<select v-model="selected" class="liSpan col-sm-3" id="select_1">
+						<option v-for="option in options" v-bind:value="option.value" :disabled="isAble">
+							{{ option.text }}
+						</option>
+					</select>
+					&nbsp<span>u = {{ selected }}</span>
+				</div>
+  				
+<!-- 				<button type="button" class="self_button btn btn-primary" data-toggle="modal" data-target="#addMaterial">
+					自定义材质
+				</button> -->
+				<el-button @click="addMaterial.visible = true" class="self_button" type="primary">自定义材质</el-button>
+
+				<el-dialog 
+					:title="addMaterial.title" 
+					:visible.sync="addMaterial.visible" 
+					:before-close="handleAddMaterialClose"
+					width="40%">
+					<el-form 
+						ref='addMaterialForm'
+						:rules='addMaterial.rules'
+						:model='addMaterial.form' 
+						label-position='right'
+						label-width='150px'>
+					    <el-form-item label="接触面名称：" prop='name'>
+					      	<el-input v-model='addMaterial.form.name' style="width: 70%;" placeholder="小于15字符"></el-input>
+					    </el-form-item>
+					     
+					    <el-form-item label="滑动摩擦系数：" prop='new_u'>
+					      	<el-input type="number" v-model="addMaterial.form.new_u" style="width: 70%;" placeholder="0 < u < 1"></el-input>
+					    </el-form-item>
+					</el-form>
+					<div slot="footer" class="dialog-footer">
+					    <el-button @click="addMaterial.visible = false">取 消</el-button>
+					    <el-button type="primary" @click="submitAddMaterialForm">确 定</el-button>
+					</div>
+				</el-dialog>	
+
+				<!-- 模态框 -->
+				<div class="modal fade" id="addMaterial">
+					<div class="modal-dialog">		
+						<div class="modal-content">
+
+							<!-- 模态框头部 -->
+							<div class="modal-header">
+								<h4 class="modal-title">自定义材质</h4>
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+							</div>
+							<form ref='addMaterialDialogForm' :rules='addMaterial.rules' :model='addMaterial.form' >
+								<!-- 模态框主体 -->
+								<div class="modal-body">
+									<div class="ul row"  prop='name'>
+									  	<span class="li col-sm-4">接触面名称：</span>
+					  					<input class="liSpan col-sm-4" v-model="addMaterial.form.name" placeholder="接触面名称">
+									</div>
+
+									<div  class="ul row"  prop='new_u'>
+									  	<span class="li col-sm-4">滑动摩擦系数：</span>
+					  					<input class="liSpan col-sm-4" v-model="addMaterial.form.new_u" placeholder="滑动摩擦系数" type="number">
+					  					&nbsp&nbsp<span>0 < u < 1 </span>
+									</div>
+									
+								</div>
+							</form>
+							
+
+							<!-- 模态框底部 -->
+							<div class="modal-footer">
+							    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+							    <button type="button" class="btn btn-primary" data-dismiss="modal" @click="submitAddMaterialForm">确定</button>
+							</div>
+
+						</div>
+					</div>
+				</div>
+
+
+
+
+				<button type="button" class="btn btn-primary start"  @click="begin_run" :disabled="isAble">开始</button>
+
+				<button type="button" class="btn btn-info restart"  @click="internal_draw">结束</button>
+
+
+
+
+			</div>
+		</section>
+		
+		<section class="right_section">
+			<canvas id="myCanvas">
+				Your browser does not support the HTML5 canvas tag.
+			</canvas>
+		</section>
+
+
+	</div>
+
+<img src="./images/玻璃.png" id="glass" hidden>
+<img src="./images/木头.jpg" id="board" hidden>	
+<img src="./images/棉布.jpg" id="cotton" hidden>	
+<img src="./images/塑料.jpg" id="plastic" hidden>
+<img src="./images/自定义.jpg" id="customize" hidden>
+<img src="./images/ting.png" id="ting" hidden>
+	
+
+<script>
+	new Vue({
+	  	el: '#app',
+	 	data() {
+	 		var checkM = (rule, value, callback) => {
+
+				setTimeout(() => {
+						if (value > 500) {
+							callback(new Error('输入木块的质量小于500N'));
+						} else {
+							callback();
+						}
+					
+				}, 500);
+			};
+			var checkL = (rule, value, callback) => {
+
+				setTimeout(() => {
+
+						if (value > 90) {
+							callback(new Error('输入倾斜角小于90°'));
+						} else if(value < 0){
+							callback(new Error('输入倾斜角大于0°'));
+						}else{
+							callback();
+						}
+					
+				}, 500);
+			};
+	 		var checkName = (rule, value, callback) => {
+
+				setTimeout(() => {
+					if (Number.isInteger(value)) {
+						callback(new Error('请不要输入数字值'));
+					} else {
+						if (value.length > 15) {
+							callback(new Error('输入字符长度小于15'));
+						} else {
+							callback();
+						}
+					}
+				}, 1000);
+			};
+	 		var checkNew_u = (rule, value, callback) => {
+
+				setTimeout(() => {
+					if (value > 1 || value <= 0) {
+						callback(new Error('请输入符合要求的u值'));
+					} else {
+						callback();
+					}
+				}, 1000);
+			};
+		    return {
+
+		    	screenWidth:'',
+		    	size:1,
+		    	interval: null,
+
+		    	basicMessage:{
+		    		form:{
+		    			m:6,
+		    			L:30,
+		    		},
+
+		    		rules:{
+		    			m:[{required:true,message:'请输入木块质量',trigger:'blur'},
+		    				{ validator: checkM, trigger: 'blur' }],
+						L:[{required:true,message:'请输入倾斜角',trigger:'blur'},
+							{ validator: checkL, trigger: 'blur' }],
+
+		    		}
+		    	},
+		    	selected: 0.25,
+		    	timestamp_demo:'',
+		    	isAble:false,
+		    	internal_start:false,
+			    options: [
+					{ text: '木板', value: 0.25 },
+					{ text: '玻璃', value: 0.05 },
+					{ text: '塑料', value: 0.07 },
+					{ text: '棉布', value: 0.3 },
+			    ],
+			    addMaterial:{
+					visible: false,
+			    	form:{
+			    		name:'',
+			    		new_u:'',			    		
+			    	},
+
+		    		
+		    		rules:{
+		    			name:[{required:true,message:'请输入接触面名称',trigger:'blur'},
+		    					{ validator: checkName, trigger: 'blur' }],
+						new_u:[{required:true,message:'请输入滑动摩擦系数',trigger:'blur'},
+						{ validator: checkNew_u, trigger: 'blur' }],
+
+		    		},
+
+		    	},
+
+
+			}
+		},
+		mounted() {
+
+			this.screenWidth= window.innerWidth;
+			let h2 = window.innerHeight;
+
+			console.log(this.screenWidth,h2)
+			canvas = document.querySelector('#myCanvas');
+
+			if(this.screenWidth > 2000){
+				this.size = 1.2
+			}else if (this.screenWidth > 1450) {
+				this.size = 0.9
+			}else{
+				this.size = 0.75
+			}
+			// console.log(this.size)
+			canvas.width = 1020*this.size ;  // 不可在css或者标签上直接设置画布大小，这样展示的图片会进行拉伸收缩，效果很差
+        	canvas.height = 720*this.size ;
+			this.context = canvas.getContext('2d');
+			this.context.scale(this.size,this.size);
+			this.initCanvas();
+
+			window.onresize = () => {
+				return (() => {
+					this.screenWidth = window.innerWidth;
+				})()
+		    } 
+		},
+		watch:{
+			screenWidth(val){
+				// 为了避免频繁触发resize函数导致页面卡顿，使用定时器
+				if(!this.timer){
+					// 一旦监听到的screenWidth值改变，就将其重新赋给data里的screenWidth
+					this.screenWidth = val;
+					this.timer = true;
+					let that = this;
+					setTimeout(function(){
+						// 打印screenWidth变化的值
+						console.log(that.screenWidth);
+						if(that.screenWidth > 2000){
+							that.size = 1.2
+						}else if (that.screenWidth > 1450) {
+							that.size = 0.9
+						}else{
+							that.size = 0.75
+							console.log(that.screenWidth)
+						}
+						canvas.width = 1020*that.size ;  // 不可在css或者标签上直接设置画布大小，这样展示的图片会进行拉伸收缩，效果很差
+			        	canvas.height = 720*that.size ;
+						that.context = canvas.getContext('2d');
+						that.context.scale(that.size,that.size);
+						that.draw();
+
+
+						that.timer = false;
+					},400)
+				}
+			}
+		},
+		methods: {
+			initCanvas() { // 初始化
+				this.draw();
+			},
+
+			draw(){
+				this.context.clearRect(0,0,1020,720);
+
+				var myselect=document.getElementById("select_1");
+				var index=myselect.selectedIndex ; 
+				var options_text = myselect.options[index].text;
+
+
+				if(options_text == '木板'){
+					var material=document.getElementById("board");
+				}else if (options_text == '玻璃') {
+					var material=document.getElementById("glass");
+				}else if (options_text == '塑料') {
+					var material=document.getElementById("plastic");
+				}else if(options_text == '棉布'){
+					var material=document.getElementById("cotton");
+				}else{
+					var material=document.getElementById("customize");
+				}
+
+
+				this.context.beginPath();
+				this.context.moveTo(100,630);
+				this.context.lineTo(100,650);
+				this.context.lineTo(800*Math.cos(Math.PI*this.basicMessage.form.L/180)+100,650);	
+				this.context.lineTo(800*Math.cos(Math.PI*this.basicMessage.form.L/180)+100,630-800*Math.sin(Math.PI*this.basicMessage.form.L/180));	
+				this.context.lineTo(100,630);			
+				this.context.stroke();
+				var pattern = this.context.createPattern(material,'repeat');
+				this.context.fillStyle = pattern;
+				this.context.fill();
+
+
+				var ting=document.getElementById("ting");
+				this.context.translate(100,630);
+				this.context.rotate(-this.basicMessage.form.L*Math.PI/180);
+				this.context.drawImage(ting,0,-100);
+				this.context.rotate(this.basicMessage.form.L*Math.PI/180)		
+				this.context.translate(-(100),-(630));
+
+				this.context.font="20px 微软雅黑";
+				this.context.fillStyle = "black";
+				var num = this.basicMessage.form.m*(this.selected)*Math.cos(Math.PI*this.basicMessage.form.L/180) + this.basicMessage.form.m*Math.sin(Math.PI*this.basicMessage.form.L/180);
+				this.context.fillText(this.basicMessage.form.L,140,630);
+
+			},
+			beginDraw(){
+				this.isAble = true;
+				timestamp_demo = new Date().getTime();
+				const timer = setInterval(()=>{
+					var timestamp = new Date().getTime();
+					var interval_time = timestamp - timestamp_demo
+					if (interval_time >= 1000*5 || this.internal_start == true) {
+						clearInterval(timer);
+						this.isAble = false;
+						this.internal_start = false;
+					}
+
+					this.context.clearRect(0,0,1020,720);
+
+
+					var myselect=document.getElementById("select_1");
+					var index=myselect.selectedIndex ; 
+					var options_text = myselect.options[index].text;
+
+
+
+					if(options_text == '木板'){
+						var material=document.getElementById("board");
+					}else if (options_text == '玻璃') {
+						var material=document.getElementById("glass");
+					}else if (options_text == '塑料') {
+						var material=document.getElementById("plastic");
+					}else if(options_text == '棉布'){
+						var material=document.getElementById("cotton");
+					}else{
+						var material=document.getElementById("customize");
+					}
+
+					this.context.beginPath();
+					this.context.moveTo(100,630);
+					this.context.lineTo(100,650);
+					this.context.lineTo(800*Math.cos(Math.PI*this.basicMessage.form.L/180)+100,650);	
+					this.context.lineTo(800*Math.cos(Math.PI*this.basicMessage.form.L/180)+100,630-800*Math.sin(Math.PI*this.basicMessage.form.L/180));	
+					this.context.lineTo(100,630);			
+					this.context.stroke();
+					var pattern = this.context.createPattern(material,'repeat');
+					this.context.fillStyle = pattern;
+					this.context.fill();
+
+
+					var space = 800*3/4/5000;
+
+
+					var ting=document.getElementById("ting");
+					this.context.translate(100+space*interval_time*Math.cos(Math.PI*this.basicMessage.form.L/180),630-space*interval_time*Math.sin(Math.PI*this.basicMessage.form.L/180));
+					this.context.rotate(-this.basicMessage.form.L*Math.PI/180);
+					this.context.drawImage(ting,0,-100);
+					this.context.rotate(this.basicMessage.form.L*Math.PI/180)		
+					this.context.translate(-(100+space*interval_time*Math.cos(Math.PI*this.basicMessage.form.L/180)),-(630-space*interval_time*Math.sin(Math.PI*this.basicMessage.form.L/180)));
+
+					this.context.font="20px 微软雅黑";
+					this.context.fillStyle = "black";
+					var num = this.basicMessage.form.m*(this.selected)*Math.cos(Math.PI*this.basicMessage.form.L/180) + this.basicMessage.form.m*Math.sin(Math.PI*this.basicMessage.form.L/180);
+					if(interval_time >= 1500){
+						this.context.fillText("弹簧测力计读数：" + Math.round(num*1000)/1000 + "N",760,50);
+					}
+					
+					this.context.fillText(this.basicMessage.form.L,140,630);
+				},20);
+
+			},
+
+			internal_draw(){
+				this.internal_start = true;
+			},
+
+			submitAddMaterialForm(){
+				//1.数据校验
+	    		this.$refs['addMaterialForm'].validate((valid)=>{
+	    			if(valid){
+	    				//2.数据格式正确，向后台发送数据
+	    				this.options.push({
+							text:this.addMaterial.form.name,
+							value:this.addMaterial.form.new_u
+						});
+						console.log(this.addMaterial.form.name)
+	    				this.$notify({title:'成功',message:'材质信息保存成功',type:'success'});
+	    				this.$refs['addMaterialForm'].resetFields();
+	      				this.addMaterial.visible = false;
+
+	    			}
+	    		});
+
+				
+				
+			},
+
+			begin_run(){
+				this.$refs['basicMessageForm'].validate((valid)=>{
+	    			if(valid){
+	    				this.beginDraw();
+	    			}
+	    		});
+			},
+
+			//关闭自定义模态框
+	      	handleAddMaterialClose(done){
+	      		this.$refs['addMaterialForm'].resetFields();
+	      		done();
+	      	},
+		}
+
+	})
+
+
+
+</script>
+
+</body>
+</html>
